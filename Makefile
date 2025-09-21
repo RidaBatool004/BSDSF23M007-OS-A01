@@ -1,35 +1,52 @@
+# Compiler and Flags
 CC = gcc
-AR = ar rcs
-CFLAGS = -Wall -Iinclude
+CFLAGS = -Wall -Iinclude -fPIC
 
-OBJDIR = obj
-BINDIR = bin
-LIBDIR = lib
+# Directories
+SRC_DIR = src
+OBJ_DIR = obj
+BIN_DIR = bin
+LIB_DIR = lib
+INC_DIR = include
 
-LIB = $(LIBDIR)/libmyutils.a
-TARGET = $(BINDIR)/client_static
+# Targets
+STATIC_LIB = $(LIB_DIR)/libmyutils.a
+DYNAMIC_LIB = $(LIB_DIR)/libmyutils.so
+STATIC_CLIENT = $(BIN_DIR)/client_static
+DYNAMIC_CLIENT = $(BIN_DIR)/client_dynamic
 
-OBJS = $(OBJDIR)/main.o $(OBJDIR)/mystrfunctions.o $(OBJDIR)/myfilefunctions.o
-LIBOBJS = $(OBJDIR)/mystrfunctions.o $(OBJDIR)/myfilefunctions.o
+# Sources and Objects
+SRCS = $(SRC_DIR)/mystrfunctions.c $(SRC_DIR)/myfilefunctions.c
+OBJS = $(OBJ_DIR)/mystrfunctions.o $(OBJ_DIR)/myfilefunctions.o
+MAIN = $(OBJ_DIR)/main.o
 
-# Default build
-all: $(TARGET)
+# Default target
+all: $(STATIC_CLIENT) $(DYNAMIC_CLIENT)
 
-# Build the final executable (link main with static library)
-$(TARGET): $(LIB) $(OBJDIR)/main.o
-	$(CC) $(CFLAGS) $(OBJDIR)/main.o -L$(LIBDIR) -lmyutils -o $(TARGET)
-
-# Build the static library
-$(LIB): $(LIBOBJS)
-	$(AR) $(LIB) $(LIBOBJS)
-
-# Compile all .c files to .o
-$(OBJDIR)/%.o: src/%.c
+# Build object files
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Cleaning
-clean:
-	rm -f $(OBJDIR)/*.o $(TARGET) $(LIB)
+# Static library
+$(STATIC_LIB): $(OBJS)
+	ar rcs $@ $^
 
+# Dynamic library
+$(DYNAMIC_LIB): $(OBJS)
+	$(CC) -shared -o $@ $^
+
+# Static client
+$(STATIC_CLIENT): $(MAIN) $(STATIC_LIB)
+	$(CC) -o $@ $^
+
+# Dynamic client
+$(DYNAMIC_CLIENT): $(MAIN) $(DYNAMIC_LIB)
+	$(CC) -o $@ $< -L$(LIB_DIR) -lmyutils
+
+# Clean
+clean:
+	rm -f $(OBJ_DIR)/*.o $(STATIC_CLIENT) $(DYNAMIC_CLIENT) $(STATIC_LIB) $(DYNAMIC_LIB)
+
+# Phony targets
 .PHONY: all clean
 
