@@ -1,27 +1,35 @@
-include macros.mk
+CC = gcc
+AR = ar rcs
+CFLAGS = -Wall -Iinclude
 
-.PHONY: all clean run install uninstall
+OBJDIR = obj
+BINDIR = bin
+LIBDIR = lib
 
+LIB = $(LIBDIR)/libmyutils.a
+TARGET = $(BINDIR)/client_static
+
+OBJS = $(OBJDIR)/main.o $(OBJDIR)/mystrfunctions.o $(OBJDIR)/myfilefunctions.o
+LIBOBJS = $(OBJDIR)/mystrfunctions.o $(OBJDIR)/myfilefunctions.o
+
+# Default build
 all: $(TARGET)
 
-# Link final executable from object files
-$(TARGET):
-	$(MAKE) -C $(SRC)
-	$(CC) $(OBJ)/*.o -o $(TARGET)
+# Build the final executable (link main with static library)
+$(TARGET): $(LIB) $(OBJDIR)/main.o
+	$(CC) $(CFLAGS) $(OBJDIR)/main.o -L$(LIBDIR) -lmyutils -o $(TARGET)
 
-run: all
-	./$(TARGET)
+# Build the static library
+$(LIB): $(LIBOBJS)
+	$(AR) $(LIB) $(LIBOBJS)
 
+# Compile all .c files to .o
+$(OBJDIR)/%.o: src/%.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Cleaning
 clean:
-	$(MAKE) -C $(SRC) clean
-	rm -f $(TARGET)
+	rm -f $(OBJDIR)/*.o $(TARGET) $(LIB)
 
-# ====== New Targets ======
-install: all
-	@echo "Installing $(TARGET) to /usr/local/bin ..."
-	cp $(TARGET) /usr/local/bin/
-
-uninstall:
-	@echo "Uninstalling $(TARGET) from /usr/local/bin ..."
-	rm -f /usr/local/bin/client
+.PHONY: all clean
 
