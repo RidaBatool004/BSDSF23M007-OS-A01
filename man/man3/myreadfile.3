@@ -1,0 +1,20 @@
+.TH MYREADFILE 3 "September 2025" "Version 0.4.1" "Library Functions Manual"
+.SH NAME
+myreadfile \- read a file into a buffer
+.SH SYNOPSIS
+.B #include "myfilefunctions.h"
+.br
+.B int myreadfile(const char *filename, char *buffer, size_t size);
+.SH DESCRIPTION
+The
+.B myreadfile
+function reads up to
+.I size
+bytes from the file specified by
+.I filename
+into the buffer
+.I buffer.
+It returns the number of bytes successfully read, or \-1 on error.
+.SH AUTHOR
+Rida Batool <ridabatoolgujjar@gmail.com>
+

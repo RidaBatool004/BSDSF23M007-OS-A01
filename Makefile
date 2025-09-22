@@ -1,52 +1,68 @@
-# Compiler and Flags
 CC = gcc
+AR = ar rcs
 CFLAGS = -Wall -Iinclude -fPIC
 
-# Directories
-SRC_DIR = src
-OBJ_DIR = obj
-BIN_DIR = bin
-LIB_DIR = lib
-INC_DIR = include
+OBJDIR = obj
+BINDIR = bin
+LIBDIR = lib
 
-# Targets
-STATIC_LIB = $(LIB_DIR)/libmyutils.a
-DYNAMIC_LIB = $(LIB_DIR)/libmyutils.so
-STATIC_CLIENT = $(BIN_DIR)/client_static
-DYNAMIC_CLIENT = $(BIN_DIR)/client_dynamic
+LIB_STATIC = $(LIBDIR)/libmyutils.a
+LIB_DYNAMIC = $(LIBDIR)/libmyutils.so
+TARGET_STATIC = $(BINDIR)/client_static
+TARGET_DYNAMIC = $(BINDIR)/client_dynamic
+TARGET = $(BINDIR)/client
 
-# Sources and Objects
-SRCS = $(SRC_DIR)/mystrfunctions.c $(SRC_DIR)/myfilefunctions.c
-OBJS = $(OBJ_DIR)/mystrfunctions.o $(OBJ_DIR)/myfilefunctions.o
-MAIN = $(OBJ_DIR)/main.o
+OBJS = $(OBJDIR)/main.o $(OBJDIR)/mystrfunctions.o $(OBJDIR)/myfilefunctions.o
+LIBOBJS = $(OBJDIR)/mystrfunctions.o $(OBJDIR)/myfilefunctions.o
 
-# Default target
-all: $(STATIC_CLIENT) $(DYNAMIC_CLIENT)
+# Default build
+all: $(TARGET_STATIC) $(TARGET_DYNAMIC)
 
-# Build object files
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
-	$(CC) $(CFLAGS) -c $< -o $@
+# Build executables
+$(TARGET_STATIC): $(LIB_STATIC) $(OBJDIR)/main.o
+	$(CC) $(CFLAGS) $(OBJDIR)/main.o -L$(LIBDIR) -lmyutils -o $(TARGET_STATIC)
+
+$(TARGET_DYNAMIC): $(LIB_DYNAMIC) $(OBJDIR)/main.o
+	$(CC) $(CFLAGS) $(OBJDIR)/main.o -L$(LIBDIR) -lmyutils -o $(TARGET_DYNAMIC)
 
 # Static library
-$(STATIC_LIB): $(OBJS)
-	ar rcs $@ $^
+$(LIB_STATIC): $(LIBOBJS)
+	$(AR) $(LIB_STATIC) $(LIBOBJS)
 
-# Dynamic library
-$(DYNAMIC_LIB): $(OBJS)
-	$(CC) -shared -o $@ $^
+# Shared library
+$(LIB_DYNAMIC): $(LIBOBJS)
+	$(CC) -shared -o $(LIB_DYNAMIC) $(LIBOBJS)
 
-# Static client
-$(STATIC_CLIENT): $(MAIN) $(STATIC_LIB)
-	$(CC) -o $@ $^
+# Compile
+$(OBJDIR)/%.o: src/%.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
-# Dynamic client
-$(DYNAMIC_CLIENT): $(MAIN) $(DYNAMIC_LIB)
-	$(CC) -o $@ $< -L$(LIB_DIR) -lmyutils
+# Install
+install: all
+	@echo "# Install the executable"
+	mkdir -p /usr/local/bin
+	cp $(TARGET_STATIC) /usr/local/bin/client
+
+	@echo "# Install man1 page"
+	mkdir -p /usr/local/share/man/man1
+	cp man/man1/client.1 /usr/local/share/man/man1/
+
+	@echo "# Install man3 pages"
+	mkdir -p /usr/local/share/man/man3
+	cp man/man3/*.3 /usr/local/share/man/man3/
+
+	@echo "# Update man database"
+	mandb >/dev/null 2>&1 || true
+
+# Uninstall
+uninstall:
+	rm -f /usr/local/bin/client
+	rm -f /usr/local/share/man/man1/client.1
+	rm -f /usr/local/share/man/man3/*.3
 
 # Clean
 clean:
-	rm -f $(OBJ_DIR)/*.o $(STATIC_CLIENT) $(DYNAMIC_CLIENT) $(STATIC_LIB) $(DYNAMIC_LIB)
+	rm -f $(OBJDIR)/*.o $(TARGET_STATIC) $(TARGET_DYNAMIC) $(LIB_STATIC) $(LIB_DYNAMIC)
 
-# Phony targets
-.PHONY: all clean
+.PHONY: all clean install uninstall
 
